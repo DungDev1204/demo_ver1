@@ -1,0 +1,20 @@
+﻿@implements IDisposable
+ 
+@using demo_ver1.Services.MapView
+
+@inject MapCommon MapCommon
+
+<h3 class="m-2">@MapCommon.MapName</h3>
+
+@code {
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        MapCommon.OnNameChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        MapCommon.OnNameChanged -= StateHasChanged;
+    }
+}

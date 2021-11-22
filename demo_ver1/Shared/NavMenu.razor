@@ -2,6 +2,10 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
 
+@inject SignOutSessionStateManager SignOutManager
+@inject AuthenticationStateProvider AuthenticationState
+@inject NavigationManager nav
+
 
 
 <div class="top-row pl-4 navbar navbar-dark">
@@ -12,6 +16,8 @@
 </div>
 
    
+<AuthorizeView>
+    <Authorized>
         <div class="@NavMenuCssClass" @onclick="e => { collapseNavMenu = !collapseNavMenu;}">
             <ul class="nav flex-column">
                 @foreach (var navItem in NavList)
@@ -24,7 +30,33 @@
                 }
             </ul>
         </div>
-        
+        <div class="flex-grow-1" />
+        <div class="d-flex flex-row align-items-center m-1">
+            <Avatar Class="d-flex align-items-center justify-content-center" Icon="user" />
+            <span class="text-white ml-1 mr-2 flex-grow-1" style="font-size: 12px;">
+                @context.User.Identity.Name
+            </span>
+            <div class="flex-grow-1" />
+            <Dropdown Placement="@Placement.TopRight" Trigger="@(new Trigger[] { Trigger.Click })">
+                <Overlay>
+                    <Menu>
+                        <MenuItem OnClick="Logout">
+                            Logout
+                        </MenuItem>
+                    </Menu>
+                </Overlay>
+                <ChildContent>
+                    <span class="mdi mdi-menu-up text-white" />
+                </ChildContent>
+            </Dropdown>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="w-100 h-100 m-1 d-flex align-items-center justify-content-center">
+            <Button Class="mx-3" Type="@ButtonType.Primary" OnClick="Login">Login</Button>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
     
    
 
@@ -41,7 +73,7 @@
 
     public NavMenuItem[] NavList = new NavMenuItem[]
         {
-        new (){ Route="/map", Icon="mdi-map-legend", Label="Maps", },
+        new (){ Route="/maps", Icon="mdi-map-legend", Label="Maps", },
         new (){ Route="/robot", Icon="mdi-forklift", Label="Robots", },
         new (){ Route="/version", Icon="mdi-golf-cart", Label="Robot Versions", },
         new (){ Route="/connect" ,Icon="mdi-signal-variant",Label="Connecting",},
@@ -54,5 +86,15 @@
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+    private async Task Logout()
+    {
+        await SignOutManager.SetSignOutState();
+        nav.NavigateTo($"authentication/logout?returnUrl={nav.BaseUri}");
+    }
+
+    private void Login()
+    {
+        nav.NavigateTo($"authentication/login?returnUrl={nav.Uri}");
     }
 }
