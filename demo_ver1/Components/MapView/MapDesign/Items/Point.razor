@@ -1,0 +1,39 @@
+﻿@implements IDisposable
+
+@using demo_ver1.Models.MapView
+@using demo_ver1.Services.MapView
+
+@inject MapViewer MapViewer
+@inject MapCoordinateConversion CoordinateConversion 
+
+
+
+@code {
+    [Parameter]
+    public PointModel Model { get; set; }
+
+    [Parameter]
+    public EventCallback<PointModel> OnSelect { get; set; }
+    private string Transform => $"translate ({Model.PixelX} {Model.PixelY}) scale{ 1 / MapViewer.Scale}";
+    private string ActiveClass => Model.IsSelected ? "active " : "";
+    private int Radius => Model.IsSelected ? 4 : 3;
+
+	protected override void OnInitialized()
+	{
+		MapViewer.OnScaled += StateHasChanged;
+		CoordinateConversion.OnChanged += StateHasChanged;
+		Model.OnChanged += StateHasChanged;
+	}
+
+	private void OnMouseDown()
+	{
+		OnSelect.InvokeAsync(Model);
+	}
+
+	public void Dispose()
+	{
+		MapViewer.OnScaled -= StateHasChanged;
+		CoordinateConversion.OnChanged -= StateHasChanged;
+		Model.OnChanged -= StateHasChanged;
+	}
+}

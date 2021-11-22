@@ -1,0 +1,21 @@
+﻿@implements IDisposable
+
+@using demo_ver1.Services.MapView
+
+@inject AreaMapProvider MapProvider 
+
+<div class="w-100 h-100 position-absolute d-flex justify-content-center align-items-center">
+	@MapProvider.SeletedItemName
+</div>
+@code {
+		protected override void OnInitialized()
+	{
+		base.OnInitialized();
+		MapProvider.SelectedItemChanged += StateHasChanged;
+	}
+
+	public void Dispose()
+	{
+		MapProvider.SelectedItemChanged -= StateHasChanged;
+	}
+}

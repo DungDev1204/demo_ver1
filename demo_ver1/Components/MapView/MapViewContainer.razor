@@ -1,0 +1,147 @@
+﻿@implements IDisposable
+
+@using demo_ver1.JsRuntime
+@using demo_ver1.Services.MapView
+@using Microsoft.JSInterop
+
+@inject IJSRuntime RobotNetJs
+@inject MapCommon MapCommon
+@inject MapViewer MapViewer 
+
+<div class="flex-grow-1 d-flex flex-row overflow-hidden" style="border: 1px solid grey;">
+	<div class="map-viewer-map">
+		<div class="w-100 h-100 position-relative">
+			<div class="w-100 h-100 position-relative">
+				<div @ref="MapViewContainerRef"
+					 class="position-absolute w-100 h-100 overflow-hidden"
+					 style="top: 0; left: 0;"
+					 @onmousemove:stopPropagation
+					 @onmouseup:stopPropagation
+					 @onmousewheel:stopPropagation
+					 @onmousedown:stopPropagation
+					 @onmousedown="async (e) => await OnMouseDown.InvokeAsync(e)"
+					 @onmouseup="async (e) => await OnMouseUp.InvokeAsync(e)"
+					 @onmousemove="OnMouseMoveOnMapViewContainer">
+					<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+						 width="@MapCommon.ImageWidth"
+						 height="@MapCommon.ImageHeight"
+						 class="overflow-hidden"
+						 style="transform: @MapViewTransform"
+						 @onmousewheel:stopPropagation
+						 @onmousewheel="MouseWheelOnMap">
+						<image width="@MapCommon.ImageWidth"
+							   height="@MapCommon.ImageHeight"
+							   class="map-viewer-map-image"
+							   href="@MapCommon.ImageUrl" />
+						@ChildContent
+					</svg>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+@code {
+	[Parameter]
+	public RenderFragment ChildContent { get; set; }
+
+	[Parameter]
+	public EventCallback<MouseEventArgs> OnMouseDown { get; set; }
+
+	[Parameter]
+	public EventCallback<MouseEventArgs> OnMouseUp { get; set; }
+
+	[Parameter]
+	public EventCallback<MouseEventArgs> OnMouseMove { get; set; }
+
+	private ElementReference MapViewContainerRef { get; set; }
+	private DotNetObjectReference<MapViewContainer> objRef;
+	private double MouseClickedScreenX { get; set; } = 0;
+	private double MouseClickedScreenY { get; set; } = 0;
+	private string Cursor { get; set; } = "default";
+
+	private string MapViewTransform => $"translate({MapViewer.Left}px, {MapViewer.Top}px) scale({MapViewer.Scale}); cursor: {Cursor};";
+
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();
+		MapCommon.OnImageChanged += StateHasChanged;
+		MapViewer.OnViewUpdated += StateHasChanged;
+		MapViewer.OnScaled += StateHasChanged;
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		await base.OnAfterRenderAsync(firstRender);
+		if (firstRender)
+		{
+			objRef = DotNetObjectReference.Create(this);
+			await RobotNetJs.RegisterEventListenerWindow(objRef, "resize", nameof(UpdateMapViewContainerSize));
+			await UpdateMapViewContainerSize();
+			MapViewer.FitContainer();
+		}
+	}
+
+	[JSInvokable]
+	public async Task UpdateMapViewContainerSize()
+	{
+		if (MapViewContainerRef.Context is null || string.IsNullOrEmpty(MapViewContainerRef.Id))
+		{
+			MapViewer.UpdateContainerRect();
+		}
+		else
+		{
+			MapViewer.UpdateContainerRect(await RobotNetJs.GetBoundingClientRect(MapViewContainerRef));
+		}
+		StateHasChanged();
+	}
+
+	private void OnMouseMoveOnMapViewContainer(MouseEventArgs e)
+	{
+		MapViewer.UpdateCursorPosition(e.ClientX, e.ClientY);
+		MapViewer.UpdateShiftKeyState(e.ShiftKey);
+		if (e.Buttons == 1)
+		{
+			if (e.AltKey)
+			{
+				MapViewer.Move(e.ScreenX - MouseClickedScreenX, e.ScreenY - MouseClickedScreenY);
+			}
+			else
+			{
+				_ = OnMouseMove.InvokeAsync(e);
+			}
+		}
+		MouseClickedScreenX = e.ScreenX;
+		MouseClickedScreenY = e.ScreenY;
+		StateHasChanged();
+	}
+
+	private void MouseWheelOnMap(WheelEventArgs e)
+	{
+		if (e.Buttons != 0 || !e.AltKey) return;
+		if (e.DeltaY == 100)
+		{
+			MapViewer.ZoomOut(e.OffsetX, e.OffsetY);
+		}
+		else
+		{
+			MapViewer.ZoomIn(e.OffsetX, e.OffsetY);
+		}
+	}
+
+	public void SetCursor(string cursor)
+	{
+		Cursor = cursor;
+		StateHasChanged();
+	}
+
+	public void Dispose()
+	{
+		objRef?.Dispose();
+		MapCommon.OnImageChanged -= StateHasChanged;
+		MapCommon.OnImageChanged -= StateHasChanged;
+		MapViewer.OnViewUpdated -= StateHasChanged;
+		MapViewer.OnScaled -= StateHasChanged;
+	}
+}
+
+ 

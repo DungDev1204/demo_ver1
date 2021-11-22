@@ -1,0 +1,67 @@
+﻿@using demo_ver1.HubClients
+@using demo_ver1.Management.Share.Models
+@using demo_ver1.Share.Dtos
+@using demo_ver1.Services.MapView
+@using demo_ver1.Share.Helpers
+
+@inject MapHubClients MapHub
+@inject MapCommon MapCommon
+@inject NavigationManager navManager
+@inject NotificationService noticeService 
+
+<Form Model="NameUpdateModel" Layout="@FormLayout.Vertical" Class="m-3" OnFinish="UpdateName">
+	<FormItem Label="Name">
+		<Input @bind-Value="context.Name" TValue="string" OnChange="name => context.UniqueName = UniqueNameHelper.ConvertToAsciiName(name)" />
+	</FormItem>
+	<FormItem Label="Unique name">
+		<Input @bind-Value="context.UniqueName" />
+	</FormItem>
+	<FormItem>
+		<Button Type="@ButtonType.Primary" HtmlType="submit">
+			Update
+		</Button>
+		<Button OnClick="ResetNameUpdateModel">
+			Reset
+		</Button>
+	</FormItem>
+</Form>
+
+
+@code {
+	private AreaMapNameUpdateModel NameUpdateModel { get; } = new AreaMapNameUpdateModel();
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		await MapHub.StartAsync();
+		ResetNameUpdateModel();
+	}
+
+	private void ResetNameUpdateModel()
+	{
+		NameUpdateModel.Id = MapCommon.MapId;
+		NameUpdateModel.Name = MapCommon.MapName;
+		NameUpdateModel.UniqueName = MapCommon.MapUniqueName;
+		StateHasChanged();
+	}
+
+	private async Task UpdateName()
+	{
+		var response = await MapHub.UpdateMapName(MapCommon.MapId, NameUpdateModel.Name, NameUpdateModel.UniqueName);
+
+		if (!response.IsError)
+		{
+			MapCommon.UpdateName(NameUpdateModel.Id, NameUpdateModel.Name, NameUpdateModel.UniqueName);
+			var uris = navManager.Uri.Split('/');
+			uris[^1] = NameUpdateModel.UniqueName;
+			navManager.NavigateTo(string.Join('/', uris), false);
+		}
+
+		await noticeService.Open(new NotificationConfig()
+		{
+			Message = $"Update map name",
+			Description = response.IsError ? response.Message : "Successfully",
+			NotificationType = response.IsError ? NotificationType.Error : NotificationType.Success,
+		});
+	}
+}

@@ -1,0 +1,12 @@
+﻿@layout AuthenticationLayout
+
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+
+@inject NavigationManager Navigation
+
+@code {
+    protected override void OnInitialized()
+    {
+        Navigation.NavigateTo($"authentication/login?returnUrl={Navigation.Uri}");
+    }
+}

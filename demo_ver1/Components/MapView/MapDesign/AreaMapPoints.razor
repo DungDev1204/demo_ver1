@@ -1,0 +1,42 @@
+﻿@implements IDisposable
+
+@using demo_ver1.Models.MapView
+@using demo_ver1.Services.MapView
+@using demo_ver1.Components.MapView.MapDesign.Items
+
+@inject AreaMapProvider MapProvider
+
+@foreach (var point in MapProvider.AreaMapPoints)
+{
+    if (point.IsSupport)
+    {
+        <SupportPoint Model="point" OnSelect="OnPointSelect" />
+    }
+    else
+    {
+        <demo_ver1.Components.MapView.MapDesign.Items.Point Model="point" OnSelect="OnPointSelect" />
+    }
+}
+
+@code {
+    [Parameter]
+    public EventCallback OnPointSelected { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        MapProvider.OnUpdatedAreaMapPoints += StateHasChanged;
+    }
+
+    private void OnPointSelect(PointModel model)
+    {
+        MapProvider.SelectPoint(model);
+        OnPointSelected.InvokeAsync();
+    }
+
+    public void Dispose()
+    {
+        MapProvider.OnUpdatedAreaMapPoints -= StateHasChanged;
+    }
+}

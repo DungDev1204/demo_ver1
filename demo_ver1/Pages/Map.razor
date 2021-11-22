@@ -1,0 +1,105 @@
+﻿@page "/map"
+@attribute [Authorize]
+@using demo_ver1.HubClients
+@using demo_ver1.Management.Share.Models
+@using demo_ver1.Share.Dtos
+
+@inject MapHubClients MapHub
+@inject NotificationService noticeService
+@inject NavigationManager navManager
+<Spin Spinning="@IsLoading" Size="large">
+    <div class="d-flex flex-column p-3">
+        <div class="d-flex flex-row">
+            <Search Placeholder="factory's name" WrapperStyle="flex-grow: 1;" ClassicSearchIcon />
+            <div class="mx-1">
+                <Button Type="@ButtonType.Primary" OnClick="@(e => {IsShowCreateMapArea = true;})">
+                    <span class="mdi mdi-plus" style="width: 100px;" />
+                </Button>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap">
+            @foreach (var map in AreaMaps)
+            {
+                <div class="area-map-list-item" @onclick="@(e => NavigateToAreaMapSetting(map.UniqueName))">
+                    <div class="area-map-img">
+                        <div @onclick:stopPropagation>
+                            <Image Width="300px" Src="@map.MapImageUrl" />
+                        </div>
+                    </div>
+                    <div class="area-map-info">
+                        @map.Name
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</Spin>
+
+<Modal Title="Create new Area Map"
+       Visible="@IsShowCreateMapArea"
+       Width="600"
+       DestroyOnClose
+       Footer="@null"
+       Closable="@false">
+    <Form Model="areaMapCreateModel"
+          LabelColSpan="8"
+          WrapperColSpan="16"
+          OnFinish="CreateAreaMap">
+        <FormItem Label="Name">
+            <Input @bind-Value="@context.Name" />
+        </FormItem>
+        <FormItem WrapperColOffset="8" WrapperColSpan="16">
+            <Button Type="@ButtonType.Primary" HtmlType="submit">
+                Create
+            </Button>
+            <Button OnClick="@(e => {IsShowCreateMapArea = false;})">
+                Cancel
+            </Button>
+        </FormItem>
+    </Form>
+</Modal>
+
+@code {
+    [Parameter]
+    public string? MapDetailRoute { get; set; }
+
+    private bool IsShowCreateMapArea { get; set; }
+    private readonly AreaMapCreateModel areaMapCreateModel = new AreaMapCreateModel();
+    private List<AreaMapListItemDto> AreaMaps { get; } = new List<AreaMapListItemDto>();
+    private bool IsLoading { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await MapHub.StartAsync();
+        AreaMaps.AddRange(await MapHub.FindMap());
+        IsLoading = false;
+    }
+
+    private async Task CreateAreaMap()
+    {
+        var response = await MapHub.CreateMap(areaMapCreateModel.Name);
+        if (response.IsError)
+        {
+            await noticeService.Open(new NotificationConfig()
+                {
+                    Message = $"Create map {areaMapCreateModel.Name}",
+                    Description = response.Message,
+                    NotificationType = NotificationType.Error,
+                });
+        }
+        else
+        {
+            NavigateToAreaMapSetting(response.Result?.UniqueName);
+        }
+    }
+
+    private void NavigateToAreaMapSetting(string? uname)
+    {
+        if (!string.IsNullOrEmpty(uname))
+        {
+            navManager.NavigateTo($"map/{uname}");
+        }
+    }
+}
+

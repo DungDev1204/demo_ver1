@@ -1,0 +1,26 @@
+﻿@implements IDisposable
+
+@using demo_ver1.Services.MapView
+
+@inject MapViewer MapViewer
+
+<div class="d-flex flex-row">
+	<span class="mr-2 d-flex flex-row-reverse" style="width: 60px">@PositionX</span>
+	<span class="mr-2 d-flex flex-row-reverse" style="width: 60px">@PositionY</span>
+</div>
+
+@code {
+	private string PositionX => MapViewer.CursorPossitionX.ToString("F4");
+	private string PositionY => MapViewer.CursorPossitionY.ToString("F4");
+
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();
+		MapViewer.OnMouseMoved += StateHasChanged;
+	}
+
+	public void Dispose()
+	{
+		MapViewer.OnMouseMoved -= StateHasChanged;
+	}
+}

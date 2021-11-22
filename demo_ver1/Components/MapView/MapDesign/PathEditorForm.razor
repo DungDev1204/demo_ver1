@@ -1,0 +1,72 @@
+﻿@using demo_ver1.Services.MapView
+@using demo_ver1.HubClients
+@using demo_ver1.Management.Share.Models
+@using demo_ver1.Share.Helpers
+
+
+@inject AreaMapProvider MapProvider
+@inject MapHubClients MapHub
+@inject NotificationService noticeService
+@inject MapCommon MapCommon
+
+<Modal Title="Edit path"
+	   Visible="@IsShowUpdatePath"
+	   DestroyOnClose
+	   Footer="@null"
+	   OnCancel="() => IsShowUpdatePath = false">
+	<div class="d-flex flex-row">
+		<Form Model="PathNameModel"
+			  Layout="@FormLayout.Vertical"
+			  OnFinish="UpdatePathName">
+			<FormItem Label="Name">
+				<Input @bind-Value="@context.Name" TValue="string" OnChange="name => context.UniqueName = UniqueNameHelper.ConvertToAsciiName(name)" />
+			</FormItem>
+			<FormItem Label="Unique name">
+				<Input @bind-Value="@context.UniqueName" />
+			</FormItem>
+			<FormItem>
+				<Button Type="@ButtonType.Primary" HtmlType="submit">
+					Update
+				</Button>
+			</FormItem>
+		</Form>
+	</div>
+</Modal>
+
+@code {
+	private bool IsShowUpdatePath { get; set; } = false;
+
+	private PathNameUpdateModel PathNameModel { get; } = new();
+
+	public void Open()
+	{
+		var path = MapProvider.GetSelectedPath();
+		if (path is null) return;
+
+		PathNameModel.Id = path.Id;
+		PathNameModel.Name = path.Name;
+		PathNameModel.UniqueName = path.UniqueName;
+
+		IsShowUpdatePath = true;
+		StateHasChanged();
+	}
+
+	private async Task UpdatePathName()
+	{
+		var response = await MapHub.UpdatePathName(PathNameModel.Id, PathNameModel.Name, PathNameModel.UniqueName);
+
+		if (!response.IsError)
+		{
+			MapProvider.UpdateSelectedPathName(PathNameModel.Id, PathNameModel.Name, PathNameModel.UniqueName);
+			IsShowUpdatePath = false;
+			StateHasChanged();
+		}
+
+		await noticeService.Open(new NotificationConfig()
+			{
+				Message = $"Update path name",
+				Description = response.IsError ? response.Message : "Successfully",
+				NotificationType = response.IsError ? NotificationType.Error : NotificationType.Success,
+			});
+	}
+}

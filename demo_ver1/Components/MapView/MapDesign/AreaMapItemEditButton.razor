@@ -1,0 +1,47 @@
+﻿@implements IDisposable
+
+@using demo_ver1.Models.MapView
+@using demo_ver1.Services.MapView
+
+@inject AreaMapProvider MapProvider
+
+<ButtonIcon MdiIcon="mdi-file-edit" Disable="@(!MapProvider.IsSeletedItem)" OnClick="OpenEditForm" />
+
+<PointEditorForm @ref="PointEditorFormRef" />
+<PathEditorForm @ref="PathEditorFormRef" />
+
+
+@code {
+	private PointEditorForm PointEditorFormRef { get; set; }
+	private PathEditorForm PathEditorFormRef { get; set; }
+
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();
+		MapProvider.SelectedItemChanged += StateHasChanged;
+	}
+
+	private void OpenEditForm()
+	{
+		if (!MapProvider.IsSeletedItem) return;
+		OpenPointEditForm();
+
+	}
+
+	private void OpenPointEditForm()
+	{
+		if (!MapProvider.SelectedPointId.Equals(Guid.Empty))
+		{
+			PointEditorFormRef.Open();
+		}
+		else if(!MapProvider.SelectedPathId.Equals(Guid.Empty))
+		{
+			PathEditorFormRef.Open();
+		}
+	}
+
+	public void Dispose()
+	{
+		MapProvider.SelectedItemChanged -= StateHasChanged;
+	}
+}

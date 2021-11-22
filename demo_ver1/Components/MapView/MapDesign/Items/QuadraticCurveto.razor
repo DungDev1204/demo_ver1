@@ -1,0 +1,99 @@
+﻿@implements IDisposable
+
+@using demo_ver1.Models.MapView
+@using demo_ver1.Services.MapView
+
+@inject MapViewer MapViewer
+@inject MapCoordinateConversion CoordinateConversion
+
+@if (Model.IsSelected)
+{
+	<line x1="@Model.StartPoint.PixelX"
+	  y1="@Model.StartPoint.PixelY"
+	  x2="@Model.SupportPoint1.PixelX"
+	  y2="@Model.SupportPoint1.PixelY"
+	  stroke-width="@(1/MapViewer.Scale)"
+	  stroke="grey" />
+	<line x1="@Model.SupportPoint1.PixelX"
+	  y1="@Model.SupportPoint1.PixelY"
+	  x2="@Model.EndPoint.PixelX"
+	  y2="@Model.EndPoint.PixelY"
+	  stroke-width="@(1/MapViewer.Scale)"
+	  stroke="grey" />
+}
+
+<path @onclick:stopPropagation
+	  @onmousedown="OnMouseDown"
+	  d="@PathData" fill="none"
+	  stroke-dasharray="@(Model.IsSelected ? "" : $"{10/MapViewer.Scale},{3/MapViewer.Scale}")"
+	  stroke-width="@((Model.IsSelected ? 5 : 2)/MapViewer.Scale)"
+	  stroke="@(Model.IsSelected ? "#E6A23C" : "#00BFFF")"
+	  style="cursor: default" />
+
+
+@code {
+	[Parameter]
+	public PathModel Model { get; set; }
+
+	[Parameter]
+	public EventCallback<PathModel> OnSelect { get; set; }
+
+	private string PathData => $"M{Model.StartPoint.PixelX},{Model.StartPoint.PixelY} Q{Model.SupportPoint1.PixelX},{Model.SupportPoint1.PixelY} {Model.EndPoint.PixelX},{Model.EndPoint.PixelY}";
+
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();
+		MapViewer.OnScaled += StateHasChanged;
+		CoordinateConversion.OnChanged += StateHasChanged;
+		Model.OnChanged += StateHasChanged;
+
+		if (Model.Id.Equals(Guid.Empty))
+		{
+			Model.EndPoint.OnChanged += CalculateControlPoint;
+		}
+	}
+
+	private void OnMouseDown()
+	{
+		OnSelect.InvokeAsync(Model);
+	}
+
+	private void CalculateControlPoint()
+	{
+		double xs = Model.StartPoint.PositionX;
+		double ys = Model.StartPoint.PositionY;
+		double xe = Model.EndPoint.PositionX;
+		double ye = Model.EndPoint.PositionY;
+
+		double a = Math.Sqrt(Math.Pow(xe - xs, 2) + Math.Pow(ye - ys, 2));
+
+		double u = Math.Atan((xs - xe) / (ye - ys));
+
+		double x = (xs + xe) / 2;
+		double y = (ys + ye) / 2;
+
+		if ((ye > ys) ^ MapViewer.ShiftKey)
+		{
+			x += Math.Cos(u) * a / 2;
+			y += Math.Sin(u) * a / 2;
+		}
+		else
+		{
+			x -= Math.Cos(u) * a / 2;
+			y -= Math.Sin(u) * a / 2;
+		}
+		Model.SupportPoint1.SetPosition(x, y);
+	}
+
+	public void Dispose()
+	{
+		MapViewer.OnScaled -= StateHasChanged;
+		CoordinateConversion.OnChanged -= StateHasChanged;
+		Model.OnChanged -= StateHasChanged;
+
+		if (Model.Id.Equals(Guid.Empty))
+		{
+			Model.EndPoint.OnChanged -= CalculateControlPoint;
+		}
+	}
+}

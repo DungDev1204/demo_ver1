@@ -1,0 +1,54 @@
+﻿<div class="traffic-control-button-icon @ContainerClass" @onclick="OnButtonClick">
+	<div class="w-100 h-100 d-flex position-absolute"  style="justify-content: center; align-items: center;">
+		<span class="mdi @MdiIcon @Class @(Loading ? "mdi-spin" : "")" style="font-size: @(Loading ? 24 : FontSize)px; height: fit-content" />
+	</div>
+
+	<div class="w-100 h-100 position-absolute d-flex" style="justify-content: right; align-items: end;">
+		@PlusTemplate
+	</div>
+</div>
+
+@code {
+	[Parameter]
+	public string? MdiIcon
+	{
+		get => Loading ? "mdi-loading" : mdiIcon;
+		set { mdiIcon = value; }
+	}
+
+	[Parameter]
+	public string? Class { get; set; }
+
+	[Parameter]
+	public bool Loading { get; set; }
+
+	[Parameter]
+	public bool Disable { get; set; }
+
+	[Parameter]
+	public bool Active { get; set; }
+
+	[Parameter]
+	public int FontSize { get; set; } = 24;
+
+	[Parameter]
+	public int? BadgeCount { get; set; } = null;
+
+	[Parameter]
+	public RenderFragment? PlusTemplate { get; set; }
+
+	private string ContainerClass => $"{(Loading || Disable ? "disable" : "")} {(Active ? "active" : "")}";
+
+	private string? mdiIcon;
+
+	[Parameter]
+	public EventCallback OnClick { get; set; }
+
+	private async Task OnButtonClick(MouseEventArgs e)
+	{
+		if (!Disable && !Loading)
+		{
+			await OnClick.InvokeAsync();
+		}
+	}
+}

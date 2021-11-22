@@ -1,0 +1,58 @@
+﻿@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+
+
+
+<div class="top-row pl-4 navbar navbar-dark">
+    <a class="navbar-brand" href="">RobotNet</a>
+    <button class="navbar-toggler" @onclick="e => { collapseNavMenu = !collapseNavMenu;}">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+</div>
+
+   
+        <div class="@NavMenuCssClass" @onclick="e => { collapseNavMenu = !collapseNavMenu;}">
+            <ul class="nav flex-column">
+                @foreach (var navItem in NavList)
+                {
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="@navItem.Route">
+                            <span class="mdi @navItem.Icon" aria-hidden="true" /> @navItem.Label
+                        </NavLink>
+                    </li>
+                }
+            </ul>
+        </div>
+        
+    
+   
+
+
+
+@code {
+     public class NavMenuItem
+    {
+        public string? Route { get; init; }
+        public string? Icon { get; init; }
+        public string? Label { get; init; }
+        
+    }
+
+    public NavMenuItem[] NavList = new NavMenuItem[]
+        {
+        new (){ Route="/map", Icon="mdi-map-legend", Label="Maps", },
+        new (){ Route="/robot", Icon="mdi-forklift", Label="Robots", },
+        new (){ Route="/version", Icon="mdi-golf-cart", Label="Robot Versions", },
+        new (){ Route="/connect" ,Icon="mdi-signal-variant",Label="Connecting",},
+
+        };
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

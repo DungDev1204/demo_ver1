@@ -1,0 +1,48 @@
+﻿@implements IDisposable
+@using demo_ver1.Models.MapView
+@using demo_ver1.Services.MapView
+
+@inject MapViewer MapViewer
+@inject MapCoordinateConversion CoordinateConversion
+
+<line @onclick:stopPropagation
+	  @onmousedown="OnMouseDown"
+	  x1="@Model.StartPoint.PixelX"
+	  y1="@Model.StartPoint.PixelY"
+	  x2="@Model.EndPoint.PixelX"
+	  y2="@Model.EndPoint.PixelY"
+	  stroke-dasharray="@(Model.IsSelected ? "" : $"{10/MapViewer.Scale},{3/MapViewer.Scale}")"
+	  stroke-width="@((Model.IsSelected ? 5 : 2)/MapViewer.Scale)"
+	  stroke="@(Model.IsSelected ? "#E6A23C" : "#00BFFF")"
+	  style="cursor: default" />
+
+
+
+
+@code {
+	[Parameter]
+	public PathModel Model { get; set; }
+
+	[Parameter]
+	public EventCallback<PathModel> OnSelect { get; set; }
+
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();
+        MapViewer.OnScaled += StateHasChanged;
+        CoordinateConversion.OnChanged += StateHasChanged;
+		Model.OnChanged += StateHasChanged;
+	}
+
+	private void OnMouseDown()
+	{
+		OnSelect.InvokeAsync(Model);
+	}
+
+	public void Dispose()
+	{
+        MapViewer.OnScaled -= StateHasChanged;
+        CoordinateConversion.OnChanged -= StateHasChanged;
+		Model.OnChanged -= StateHasChanged;
+	}
+}

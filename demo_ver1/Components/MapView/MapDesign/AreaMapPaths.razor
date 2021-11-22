@@ -1,0 +1,40 @@
+﻿@implements IDisposable
+
+@using demo_ver1.Models.MapView
+@using demo_ver1.Services.MapView
+@using demo_ver1.Components.MapView.MapDesign.Items
+@using demo_ver1.Share.Enums
+
+@inject AreaMapProvider MapProvider
+
+@foreach (var path in MapProvider.AreaMapPaths)
+{
+	if (path.PathType == PathMapType.Line)
+	{
+		<Line Model="path" OnSelect="OnPathSelect" />
+	}
+	else if (path.PathType == PathMapType.QuadraticCurveto)
+	{
+		<QuadraticCurveto Model="path" OnSelect="OnPathSelect" />
+	}
+}
+
+@code {
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+
+		MapProvider.OnUpdatedAreaMapPaths += StateHasChanged;
+	}
+
+	private void OnPathSelect(PathModel model)
+	{
+		MapProvider.SelectPath(model);
+	}
+
+	public void Dispose()
+	{
+		MapProvider.OnUpdatedAreaMapPaths -= StateHasChanged;
+	}
+}

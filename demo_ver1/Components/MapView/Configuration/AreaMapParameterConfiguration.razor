@@ -1,0 +1,65 @@
+﻿@using demo_ver1.HubClients
+@using demo_ver1.Management.Share.Models
+@using demo_ver1.Services.MapView
+
+@inject MapHubClients MapHub
+@inject MapCommon MapCommon 
+@inject NavigationManager navManager
+@inject NotificationService noticeService 
+
+<Form Model="ParameterUpdateModel" LabelColSpan="8" WrapperColSpan="16" Class="m-3" OnFinish="UpdateMapParameters">
+    <FormItem Label="Origin X">
+        <AntDesign.InputNumber @bind-Value="context.MapOriginX" />
+    </FormItem>
+    <FormItem Label="Origin Y">
+        <AntDesign.InputNumber @bind-Value="context.MapOriginY" />
+    </FormItem>
+    <FormItem Label="Resolution">
+        <AntDesign.InputNumber @bind-Value="context.MapResolution" Min="0.000001" />
+    </FormItem>
+    <FormItem WrapperColOffset="8" WrapperColSpan="16">
+        <Button Type="@ButtonType.Primary" HtmlType="submit">
+            Update
+        </Button>
+        <Button OnClick="ResetParameterUpdateModel">
+            Reset
+        </Button>
+    </FormItem>
+</Form>
+
+@code {
+    private AreaMapParameterUpdateModel ParameterUpdateModel { get; } = new AreaMapParameterUpdateModel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await MapHub.StartAsync();
+        ResetParameterUpdateModel();
+    }
+
+    private void ResetParameterUpdateModel()
+    {
+        ParameterUpdateModel.Id = MapCommon.MapId;
+        ParameterUpdateModel.MapOriginX = MapCommon.OriginX;
+        ParameterUpdateModel.MapOriginY = MapCommon.OriginY;
+        ParameterUpdateModel.MapResolution = MapCommon.Resolution;
+        StateHasChanged();
+    }
+
+    private async Task UpdateMapParameters()
+    {
+        var response = await MapHub.UpdateMapOrigin(MapCommon.MapId, ParameterUpdateModel.MapOriginX, ParameterUpdateModel.MapOriginY, ParameterUpdateModel.MapResolution);
+
+        if (!response.IsError)
+        {
+            MapCommon.UpdateParameter(ParameterUpdateModel.MapOriginX, ParameterUpdateModel.MapOriginY, ParameterUpdateModel.MapResolution);
+        }
+
+        await noticeService.Open(new NotificationConfig()
+            {
+                Message = $"Update map parameter",
+                Description = response.IsError ? response.Message : "Successfully",
+                NotificationType = response.IsError ? NotificationType.Error : NotificationType.Success,
+            });
+    }
+}
