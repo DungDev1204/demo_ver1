@@ -22,18 +22,17 @@ using demo_ver1;
         })
         .AddHttpMessageHandler<RobotNetAuthorizationMessageHandler>();
             builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("RobotNetHttpClient"));
-builder.Services.AddOidcAuthentication(options =>
-{
-    builder.Configuration.Bind("OidcAuthentication", options.ProviderOptions);
-    options.ProviderOptions.DefaultScopes.Add("roles");
-    options.ProviderOptions.DefaultScopes.Add("profile");
-    options.ProviderOptions.DefaultScopes.Add("email");
-    options.ProviderOptions.DefaultScopes.Add("openid");
-    options.ProviderOptions.DefaultScopes.Add("RobotNetUserApiScope");
-});
-builder.Services.AddAntDesign();
+        builder.Services.AddOidcAuthentication(options =>
+        {
+            builder.Configuration.Bind("OidcAuthentication", options.ProviderOptions);
+            options.ProviderOptions.DefaultScopes.Add("roles");
+            options.ProviderOptions.DefaultScopes.Add("profile");
+            options.ProviderOptions.DefaultScopes.Add("email");
+            options.ProviderOptions.DefaultScopes.Add("openid");
+            options.ProviderOptions.DefaultScopes.Add("RobotNetUserApiScope");
+        });
+        builder.Services.AddAntDesign();
         builder.Services.AddScoped<MapHubClients>();
-
         builder.Services.AddSingleton<MapCommon>();
         builder.Services.AddSingleton<MapCoordinateConversion>();
         builder.Services.AddSingleton<MapViewer>();

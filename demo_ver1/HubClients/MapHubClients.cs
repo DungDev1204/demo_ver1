@@ -36,7 +36,6 @@ public class MapHubClients : IMapHub
         : hubConnection.InvokeAsync<ResultDto<AreaMapListItemDto>>("CreateMap", name);
     public Task<ResultDto<PathMapDto>> CreatePath(PathMapCreateModel model)
         => hubConnection.InvokeAsync<ResultDto<PathMapDto>>("CreatePath", model);
-
     public Task<ResultDto<PointMapDto>> CreatePoint(Guid mapId, double x, double y)
         => hubConnection.InvokeAsync<ResultDto<PointMapDto>>("CreatePoint", mapId, x, y);
     public Task<ResultDto> DeleteMapResource(Guid mapId, string fileName)
