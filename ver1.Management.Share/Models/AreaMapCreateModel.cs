@@ -1,5 +1,5 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+
 namespace demo_ver1.Management.Share.Models;
 public class AreaMapCreateModel
 {
